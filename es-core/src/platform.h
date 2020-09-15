@@ -14,7 +14,11 @@ enum QuitMode
 	QUIT = 0,
 	RESTART = 1,
 	SHUTDOWN = 2,
-	REBOOT = 3
+	REBOOT = 3,
+#ifdef _RPI_
+	REBOOT_OS = 16,
+	REBOOT_OS_MAX = 48
+#endif
 };
 
 int runSystemCommand(const std::string& cmd_utf8); // run a utf-8 encoded in the shell (requires wstring conversion on Windows)

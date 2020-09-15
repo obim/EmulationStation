@@ -34,6 +34,10 @@ private:
 	//Clear everything and load default values.
 	void setDefaults();
 	void processBackwardCompatibility();
+#ifdef _RPI_
+	int getPartitionNr();
+	void parseInstalledOS();
+#endif
 
 	std::map<std::string, bool> mBoolMap;
 	std::map<std::string, int> mIntMap;

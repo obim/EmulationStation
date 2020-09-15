@@ -5,8 +5,18 @@
 #include "Scripting.h"
 #include "platform.h"
 #include <pugixml/src/pugixml.hpp>
+#ifdef _RPI_
+#include <json.hpp>
+#include <fstream>
+#include <regex>
+#include <string>
+#endif
 #include <algorithm>
 #include <vector>
+
+#ifdef _RPI_
+using json = nlohmann::json;
+#endif
 
 Settings* Settings::sInstance = NULL;
 
@@ -40,6 +50,9 @@ Settings::Settings()
 {
 	setDefaults();
 	loadFile();
+	#ifdef _RPI_
+	parseInstalledOS();
+	#endif
 }
 
 Settings* Settings::getInstance()
@@ -164,6 +177,11 @@ void Settings::setDefaults()
 	mIntMap["ScreenOffsetX"] = 0;
 	mIntMap["ScreenOffsetY"] = 0;
 	mIntMap["ScreenRotate"]  = 0;
+
+#ifdef _RPI_
+	mStringMap["installedOsNames"] = "";
+	mStringMap["installedOsPartitions"] = "";
+#endif
 }
 
 template <typename K, typename V>
@@ -232,6 +250,66 @@ void Settings::loadFile()
 
 	processBackwardCompatibility();
 }
+
+#ifdef _RPI_
+int Settings::getPartitionNr(std::string partition)
+{
+    int partitionNr = -1;
+
+    std::regex r("^[\"]?PARTUUID=");
+    if(std::regex_search(partition, r))
+    {
+        std::regex r2("([0-9a-f][0-9a-f])[\"]?$");
+        std::smatch m;
+        if(std::regex_search(partition, m, r2, std::regex_constants::match_default))
+        {
+            std::string partitionNrHexS = m[1];
+            partitionNr = std::stoi(partitionNrHexS, 0, 16);
+        }
+    }
+    else
+    {
+        std::regex r2("([0-9]+)[\"]?$");
+        std::smatch m;
+        if(std::regex_search(partition, m, r2, std::regex_constants::match_default))
+        {
+            std::string partitionNrS = m[1];
+            partitionNr = std::stoi(partitionNrS, 0, 10);
+        }
+    }
+
+    return partitionNr;
+}
+
+void Settings::parseInstalledOS()
+{
+	const std::string path = "/settings/installed_os.json";
+
+	if(!Utils::FileSystem::exists(path))
+		return;
+
+	std::ifstream f(path);
+	json j = json::parse(f);
+
+	std::string osNames = "";
+	std::string partitionNumbers = "";
+	for(auto os : j)
+	{
+		if(osNames.length() > 0)
+		{
+			osNames += "\n";
+			partitionNumbers += "\n";
+		}
+		std::string osName = os["name"].get<std::string>();
+		std::replace(s.begin(), s.end(), '\n', ' ');
+		osNames += osName;
+		partitionNumbers += getPartitionNr(os["partitions"][0].get<std::string>());
+	}
+
+	setString("installedOsNames", osNames);
+	setString("installedOsPartitions", partitionNumbers);
+}
+#endif
 
 void Settings::processBackwardCompatibility()
 {

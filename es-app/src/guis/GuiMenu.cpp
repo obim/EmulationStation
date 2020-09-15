@@ -18,6 +18,7 @@
 #include "VolumeControl.h"
 #include <SDL_events.h>
 #include <algorithm>
+#include <sstream>
 #include "platform.h"
 
 GuiMenu::GuiMenu(Window* window) : GuiComponent(window), mMenu(window, "MAIN MENU"), mVersion(window)
@@ -523,6 +524,31 @@ void GuiMenu::openQuitMenu()
 	});
 	row.addElement(std::make_shared<TextComponent>(window, "RESTART SYSTEM", Font::get(FONT_SIZE_MEDIUM), 0x777777FF), true);
 	s->addRow(row);
+
+#ifdef _RPI_
+    istringstream names(Settings::getInstance()->getString("installedOsNames"));
+    istringstream partitions(Settings::getInstance()->getString("installedOsPartitions"));
+	std::string name;
+	std::string partition;
+	int partitionNr;
+	while(getline(names, name, '\n') && getline(partitions, partition, '\n'))
+	{
+		partitionNr = std::stoi(partition);
+
+		row.elements.clear();
+		row.makeAcceptInputHandler([window] {
+			window->pushGui(new GuiMsgBox(window, "REALLY REBOOT INTO " + name + "?", "YES",
+				[] {
+				Scripting::fireEvent("quit", "shutdown");
+				Scripting::fireEvent("shutdown");
+				if (quitES(static_cast<QuitMode>(static_cast<int>(QuitMode::REBOOT_OS) + partitionNr))) != 0)
+					LOG(LogWarning) << "Restart terminated with non-zero result!";
+			}, "NO", nullptr));
+		});
+		row.addElement(std::make_shared<TextComponent>(window, "REBOOT INTO " + name, Font::get(FONT_SIZE_MEDIUM), 0x777777FF), true);
+		s->addRow(row);
+	}
+#endif
 
 	row.elements.clear();
 	row.makeAcceptInputHandler([window] {

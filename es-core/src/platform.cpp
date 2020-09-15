@@ -7,6 +7,7 @@
 #include <unistd.h>
 #endif
 #include <fcntl.h>
+#include <string>
 
 #include "Log.h"
 
@@ -86,4 +87,16 @@ void processQuitMode()
 		runShutdownCommand();
 		break;
 	}
+#ifdef _RPI_
+	int tmp = static_cast<int>(quitMode);
+	if(tmp >= static_cast<int>(QuitMode::REBOOT_OS) && tmp <= static_cast<int>(QuitMode::REBOOT_OS_MAX))
+	{
+		int partition = tmp - static_cast<int>(QuitMode::REBOOT_OS);
+		LOG(LogInfo) << "Shutting system down, booting partition #" << std::to_string(partition);
+		touch("/tmp/es-shutdown");
+		std::string cmd = "sudo reboot ";
+		cmd += std::to_string(partition);
+		runSystemCommand(cmd);
+	}
+#endif
 }
