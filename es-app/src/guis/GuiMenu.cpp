@@ -526,26 +526,31 @@ void GuiMenu::openQuitMenu()
 	s->addRow(row);
 
 #ifdef _RPI_
-    istringstream names(Settings::getInstance()->getString("installedOsNames"));
-    istringstream partitions(Settings::getInstance()->getString("installedOsPartitions"));
+    std::istringstream names(Settings::getInstance()->getString("installedOsNames"));
+    std::istringstream partitions(Settings::getInstance()->getString("installedOsPartitions"));
 	std::string name;
 	std::string partition;
-	int partitionNr;
-	while(getline(names, name, '\n') && getline(partitions, partition, '\n'))
+	while(std::getline(names, name, '\n') && std::getline(partitions, partition, '\n'))
 	{
-		partitionNr = std::stoi(partition);
+		int partitionNr = std::stoi(partition);
+		std::string msg = "REALLY REBOOT INTO ";
+		msg += name;
+		msg += "?";
+		std::string text = "REBOOT INTO ";
+		text += name;
+		QuitMode quitMode = static_cast<QuitMode>(static_cast<int>(QuitMode::REBOOT_OS) + partitionNr);
 
 		row.elements.clear();
-		row.makeAcceptInputHandler([window] {
-			window->pushGui(new GuiMsgBox(window, "REALLY REBOOT INTO " + name + "?", "YES",
-				[] {
+		row.makeAcceptInputHandler([window,msg,partitionNr,quitMode] {
+			window->pushGui(new GuiMsgBox(window, msg, "YES",
+				[msg,partitionNr,quitMode] {
 				Scripting::fireEvent("quit", "shutdown");
 				Scripting::fireEvent("shutdown");
-				if (quitES(static_cast<QuitMode>(static_cast<int>(QuitMode::REBOOT_OS) + partitionNr))) != 0)
+				if (quitES(quitMode) != 0)
 					LOG(LogWarning) << "Restart terminated with non-zero result!";
 			}, "NO", nullptr));
 		});
-		row.addElement(std::make_shared<TextComponent>(window, "REBOOT INTO " + name, Font::get(FONT_SIZE_MEDIUM), 0x777777FF), true);
+		row.addElement(std::make_shared<TextComponent>(window, text, Font::get(FONT_SIZE_MEDIUM), 0x777777FF), true);
 		s->addRow(row);
 	}
 #endif

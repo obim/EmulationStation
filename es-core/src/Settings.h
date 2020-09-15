@@ -35,7 +35,7 @@ private:
 	void setDefaults();
 	void processBackwardCompatibility();
 #ifdef _RPI_
-	int getPartitionNr();
+	int getPartitionNr(std::string partition);
 	void parseInstalledOS();
 #endif
 
