@@ -529,10 +529,10 @@ void GuiMenu::openQuitMenu()
     std::istringstream names(Settings::getInstance()->getString("installedOsNames"));
     std::istringstream partitions(Settings::getInstance()->getString("installedOsPartitions"));
 	std::string name;
-	std::string partition;
-	while(std::getline(names, name, '\n') && std::getline(partitions, partition, '\n'))
+	int partitionNr;
+	while(std::getline(names, name, '\n'))
 	{
-		int partitionNr = std::stoi(partition);
+		partitions >> partitionNr;
 		std::string msg = "REALLY REBOOT INTO ";
 		msg += name;
 		msg += "?";
