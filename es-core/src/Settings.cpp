@@ -303,7 +303,7 @@ void Settings::parseInstalledOS()
 		std::string osName = os["name"].get<std::string>();
 		std::replace(osName.begin(), osName.end(), '\n', ' ');
 		osNames += osName;
-		partitionNumbers += getPartitionNr(os["partitions"][0].get<std::string>());
+		partitionNumbers += std::to_string(getPartitionNr(os["partitions"][0].get<std::string>()));
 	}
 
 	setString("installedOsNames", osNames);
